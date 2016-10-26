@@ -16,7 +16,7 @@ We present a mechanism that allows high-stake contract authors to create a trust
 
 Following a [tweet](https://twitter.com/random_walker/status/692807445408845824) by @random_walker, de la Rouviere [mentioned](https://media.consensys.net/2016/05/05/assert-guards-towards-automated-code-bounties-safe-smart-contract-coding-on-ethereum/) automatic bounties back in May 2016.
 
-Peter Borah [gave](https://medium.com/@peterborah/we-need-fault-tolerant-smart-contracts-ec1b56596dbc#.1j7it3cff) an example of how an automated bug bounty for a specific contract could be created (from which we borrowed some of the terms here).
+Peter Borah [gave](https://medium.com/@peterborah/we-need-fault-tolerant-smart-contracts-ec1b56596dbc#.1j7it3cff) an example of how an automated bug bounty for a specific contract could be created.
 
 Manuel Aráoz [showed another example](https://medium.com/zeppelin-blog/onward-with-ethereum-smart-contract-security-97a827e47702#.o4ckev1rf) of a contract-specific automated bug bounty as a tool in contract security.
 
@@ -64,6 +64,7 @@ TODO(rmerom): complete this section.
 3. Allow different tests to be associated with different bounty values s.t. more major vulnerabilites will produce higher bounty prizes.
 4. Allow a temporal increase of bounty prize (for example, bounty starts at `b/10` and climbs up to `b` Ether). This will allow obvious bugs that were overlooked to be fixed without Alice having to pay the entire bounty amount.
 
-### NOTE: perliminary code will be uploaded soon
+### NOTE: more perliminary code will be uploaded soon
+[Environment Contract](https://github.com/rmerom/PutYourMoneyWhereYourContractIs/blob/master/contracts/environment.sol)
 
 
