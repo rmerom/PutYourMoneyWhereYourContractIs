@@ -1,12 +1,14 @@
 pragma solidity ^0.4.2;
 
 // Base contract for TargetContracts' interface with the environment (blockchain).
-// For production use, one may use ProdEnvironment below, or remove references
-// to this interface from the original TargetContract*.
 //
-// For automated bounties, authors may either use the EnvironmentTestContract
-// below, or create one of their own with more, or less, constraints.
-// * In future, we'll have a tool to automatically do that.
+// During automated bounties, use either the EnvironmentTestContract
+// below, or create one of your own with more, or less, constraints.
+
+// For production, use ProdEnvironment below, or replace references
+// to this interface in the original TargetContract with their direct global vars*.
+//
+// * In future, an automatic tool will be able to do that.
 contract EnvironmentContractInterface {
   function blockDotBlockHash(uint blockNumber) returns (bytes32);
   function blockDotCoinbase() returns (address);
@@ -17,9 +19,10 @@ contract EnvironmentContractInterface {
   function now() returns (uint);
 }
 
-// Target-contract authors may use this contract to simulate the environment
-// for their target-contract, or may choose to replace it with a similar one.
-// Note the environment contract must be published for the bounty.
+
+// Environment contract to use for bounty contracts. 
+// Of course, you do not have to use this contract, you can create a similar
+// one.
 contract EnvironmentTestContract is EnvironmentContractInterface {
   mapping(uint =>bytes32) blockHash;
   address coinbase;
@@ -29,14 +32,13 @@ contract EnvironmentTestContract is EnvironmentContractInterface {
   uint timestamp;
   bool blockGasLimitChanged;
   
+  // Returns the block hash set for this block by setBlockDotBlockHash(),
+  // or, if none has been set, the prod block hash.
   function blockDotBlockHash(uint forBlockNumber) returns (bytes32) {
-      if (currentBlockNumber != 0 && 
-          ((forBlockNumber < currentBlockNumber - 256) || (forBlockNumber >= currentBlockNumber))) {
-          // This is not allowed per the spec. Behave the same as if this
-          // was asked for in production.
-          uint projectedBlockNumber = 
-              forBlockNumber + currentBlockNumber - block.number;
-          return block.blockhash(projectedBlockNumber);
+      if (int(forBlockNumber) < (int(currentBlockNumber - 256)) 
+          || (forBlockNumber >= currentBlockNumber)) {
+          // Spec allows acceessing [currentblock-256, currentblock) only. 
+          return 0;
       }
       bytes32 hash = blockHash[forBlockNumber];
       if (uint(hash) == 0) {
@@ -64,18 +66,16 @@ contract EnvironmentTestContract is EnvironmentContractInterface {
   }
   
   function blockDotTimestamp() returns (uint) {
-      return timestamp;
+      return (timestamp != 0) ? timestamp : block.timestamp;
   }
   
   function now() returns (uint) {
-      return timestamp;
+      return (timestamp != 0) ? timestamp : block.timestamp;
   }
 
   function setBlockDotBlockHash(uint forBlockNumber, bytes32 _blockHash) {
       // May never change once set.
       if (blockHash[forBlockNumber] != 0) throw;
-      // Do not accept special value.
-      if (_blockHash == 0) throw;
       blockHash[forBlockNumber] = _blockHash;
   }
   
