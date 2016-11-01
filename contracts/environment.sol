@@ -1,14 +1,18 @@
 pragma solidity ^0.4.2;
 
-// Base contract for TargetContracts' interface with the environment (blockchain).
+// Part of the PutYourMoneyWhereYourContractIs (bit.do/pymwyci) project.
 //
-// During automated bounties, use either the EnvironmentTestContract
-// below, or create one of your own with more, or less, constraints.
-
-// For production, use ProdEnvironment below, or replace references
-// to this interface in the original TargetContract with their direct global vars*.
 //
-// * In future, an automatic tool will be able to do that.
+/**
+ * @title Base contract for TargetContracts' interface with the environment (blockchain).
+ * During automated bounties, use either EnvironmentTestContract
+ * or create one of your own with more, or less, constraints.
+ * 
+ * For production, use ProdEnvironment below, or replace references to this 
+ * interface in the original TargetContract with their direct global vars*.
+ * 
+ * * In future, an automatic tool will do that.
+ */
 contract EnvironmentContractInterface {
   function blockDotBlockHash(uint blockNumber) returns (bytes32);
   function blockDotCoinbase() returns (address);
@@ -20,9 +24,10 @@ contract EnvironmentContractInterface {
 }
 
 
-// Environment contract to use for bounty contracts. 
-// Of course, you do not have to use this contract, you can create a similar
-// one.
+/**
+ * Can be used as the Environment during testing and bounty challenges.
+ * Of course, you do not have to use this contract, you can create a similar one.
+ */
 contract EnvironmentTestContract is EnvironmentContractInterface {
   mapping(uint =>bytes32) blockHash;
   address coinbase;
@@ -32,8 +37,10 @@ contract EnvironmentTestContract is EnvironmentContractInterface {
   uint timestamp;
   bool blockGasLimitChanged;
   
-  // Returns the block hash set for this block by setBlockDotBlockHash(),
-  // or, if none has been set, the prod block hash.
+  /**
+   * Returns the block hash set for this block by setBlockDotBlockHash(),
+   * or, if none has been set, the prod block hash.
+   */
   function blockDotBlockHash(uint forBlockNumber) returns (bytes32) {
       if (int(forBlockNumber) < (int(currentBlockNumber - 256)) 
           || (forBlockNumber >= currentBlockNumber)) {
@@ -112,6 +119,12 @@ contract EnvironmentTestContract is EnvironmentContractInterface {
 // In order to save gas, one may carefully get rid of the EnvironmentInterface 
 // before deploying contract to production, and replace calls with references
 // to the actual variables.
+/**
+ * Environment that is to be used in production.
+ * Alternatively, in order to save gas, you may carefully replace calls
+ * to the EnvironmentInterface with the actual variable names (e.g. block.number
+ * instead of _env.blockDotNumber() ).
+ */
 contract ProdEnvironment {
   function blockDotBlockHash(uint blockNumber) returns (bytes32) {
       return block.blockhash(blockNumber);
