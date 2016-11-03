@@ -12,7 +12,7 @@ Different tools have been proposed to increase users' confidence in the security
 
 We present a mechanism that allows high-stake contract authors to create a trustless, ethereum-based Bug Bounty to be used in the period after the high-stake contract is published and **before** it is put in production.
 
-Such a mechanism is expected to draw attention from challengers with the necessary technical skills to find vulnerabilities, as they can predict deterministically the reward. So-called black hat hackers may also be drawn, in order to receive a bounty prize before someone else detects a vulnerability.
+Such a mechanism is expected to draw attention from challengers with the necessary technical skills to find vulnerabilities, as they can deterministically predict the reward. So-called black hat hackers may also be drawn, in order to receive a bounty prize before someone else detects a vulnerability.
 
 ### Related work
 
@@ -27,12 +27,14 @@ Our contribution is to propose a general-purpose, reusable "Put Your Money Where
 
 
 ### Protocol Summary
+![figure 1](http://www.pixhoster.info/f/2016-11/27333f074fd472da2c0a52ff61fe4a84.png)
 Alice the Author wants to write a contract for general use by Ethereum users, which we'll name `TargetContract`. She is willing to put her money behind its security, and give out some amount of Ether as bounty for anyone who finds a fault in the contract.
 
 After publishing a semi-final draft of `TargetContract`, she involves the community in a collabarative effort to create a `TargetContract`-specific accompanying bounty contract, which we'll name `BountyContract`. The bounty contract describes tests to see if a given `TargetContract` is in any invalid state. It can also generate &amp; deploy a new copy of `TargetContract` for challenging.
 
 
-She then registers `BountyContract` with the `BountyManager` contract, along with a deposit, for a specified period. Any challenger can try and break `BountyContract` and win that deposit during that period.
+She then registers `BountyContract` with the `BountyManager` contract, along with a deposit, for a specified period. Any challenger can try and break `BountyContract` and win that deposit during that period. A 5% deposit is required from the challenger to avoid DoSing.
+![figure2](http://www.pixhoster.info/f/2016-11/c4b4a110d501d2a9f83383ad6c0178d2.png)
 
 ### Detailed Description
 #### Contracts Involved
@@ -52,9 +54,11 @@ She then registers `BountyContract` with the `BountyManager` contract, along wit
 5. Charlie may fire any additional transactions he prepared in advance to get `TargetContract` into an invalid state, then calls `PYMWYCI.assertState()`.
 6. If successful, the bounty fund in `BountyManager` becomes withdrawable by Charlie. Otherwise, [TBD what happens with Charlie's deposit. Should not be given to Alice to prevent her from DoSing the bounty].
 
-### Constraints for `TargetContract`
-* Its contrsuctor should not use `msg.sender`, it should instead be dependency-injected as a parameter (it will be populated with the challenger's address upon creation of a challenge).
-* It should not use any of the global variable, but instead use the `EnvironmentContractInterface` (as a library) passed in its constructor to retrieve those. In production, these will simply return the actual variable values. In future, an open source tool would be able to replace any such calls with the direct variables to reduce gas costs.
+### Constraints applicable to `TargetContract`
+Constraints below apply both to `TargetContract` and to any external methods it calls (in libraries and/or external contracts).
+* In order to allow assertions about what the contract owner should do, its contrsuctor should not use `msg.sender`. If needed, the owner should instead be dependency-injected as a parameter (and be populated with the challenger's address upon creation of a challenge).
+* It should not use any of the global variables, but instead use the `EnvironmentContractInterface` (as a library) passed in its constructor to retrieve those. In production, these will simply return the actual variable values. In future, an open source tool would be able to replace any such calls with the direct variables to reduce gas costs.
+
 
 ### Security Aspects
 #### Protecting the Author
@@ -70,6 +74,6 @@ TODO(rmerom): complete this section.
 4. Allow a temporal increase of bounty prize (for example, bounty starts at `b/10` and climbs up to `b` Ether). This will allow obvious bugs that were overlooked to be fixed without Alice having to pay the entire bounty amount.
 
 ### NOTE: more perliminary code will be uploaded soon
-[Environment Contract](https://github.com/rmerom/PutYourMoneyWhereYourContractIs/blob/master/contracts/environment.sol)
+[Contracts Code](https://github.com/rmerom/PutYourMoneyWhereYourContractIs/blob/master/contracts)
 
 
