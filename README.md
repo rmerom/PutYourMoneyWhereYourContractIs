@@ -34,7 +34,7 @@ After publishing a semi-final draft of `TargetContract`, she involves the commun
 
 
 She then registers `BountyContract` with the `BountyManager` contract, along with a deposit, for a specified period. Any challenger can try and break `BountyContract` and win that deposit during that period. A 5% deposit is required from the challenger to avoid DoSing.
-![figure2](http://www.pixhoster.info/f/2016-11/c4b4a110d501d2a9f83383ad6c0178d2.png)
+![figure2](http://www.pixhoster.info/f/2016-11/5e55d4fcde5de262ac435b5e3ed8ef26.png)
 
 ### Detailed Description
 #### Contracts Involved
