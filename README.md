@@ -57,7 +57,10 @@ She then registers `TargetContractTest` with the `PutYourMoneyWhereYourContactIs
 * It should not use any of the global variable, but instead use the `EnvironmentContractInterface` (as a library) passed in its constructor to retrieve those. In production, these will simply return the actual variable values. In future, an open source tool would be able to replace any such calls with the direct variables to reduce gas costs.
 
 ### Security Aspects
-There a few assumptions in this model are that Alice represents a group of people that are `b`-sure that `TargetContract` is flawless (where `b`-sure, formally, is that they're willing to bet `b` Ether on that fact).
+#### Protecting the Author
+#####  The `ContractTarget` author may
+
+Assumptions in this model are that Alice represents a group of people that are `b`-sure that `TargetContract` is flawless (where `b`-sure, formally, is that they're willing to bet `b` Ether on that fact).
 TODO(rmerom): complete this section.
 
 ### Future Directions

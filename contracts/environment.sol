@@ -1,4 +1,4 @@
-pragma solidity ^0.4.2;
+pragma solidity ^0.4.4;
 
 // Part of the PutYourMoneyWhereYourContractIs (bit.do/pymwyci) project.
 //
