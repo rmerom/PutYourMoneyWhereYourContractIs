@@ -2,7 +2,7 @@
 ## Automated Bug Bounty Program for High Stake Contracts
 ### Status: first draft, WIP
 <div align="right">
-<sub><a href='https://github.com/rmerom'>Ron Merom</a>, Oct 2016</sub>
+<sub><a href='https://github.com/rmerom'>Ron Merom</a>, Nov 2016</sub>
 </div>
 
 ### Motivation
@@ -22,35 +22,35 @@ Peter Borah [gave](https://medium.com/@peterborah/we-need-fault-tolerant-smart-c
 
 Manuel Aráoz [showed another example](https://medium.com/zeppelin-blog/onward-with-ethereum-smart-contract-security-97a827e47702#.o4ckev1rf) of a contract-specific automated bug bounty as one tool in contract security.
 
-Our contribution is to propose a general-purpose, reusable "Put Your Money Where Your Contract Is" (PYMWYCI) Bounty registry contract that allows high stake contract creators to set up Bounty programs with minimal overhead, and provides higher confidence for challengers that they will receive the award if they are successful.
+Our contribution is to propose a general-purpose, reusable "Put Your Money Where Your Contract Is" Bounty manager contract that allows high stake contract creators to set up bounty programs with minimal overhead, and provides higher confidence for challengers that they will receive the award if they are successful.
 
 
 
 ### Protocol Summary
 Alice the Author wants to write a contract for general use by Ethereum users, which we'll name `TargetContract`. She is willing to put her money behind its security, and give out some amount of Ether as bounty for anyone who finds a fault in the contract.
 
-After publishing a semi-final draft of `TargetContract`, she involves the community in a collabarative effort to create a test contract, which we'll name `TargetContractTest`. The test contract knows how to to perform multiple checks to see if a given `TargetContract` is in any invalid state. It can also generate &amp; deploy a new copy of `TargetContract` for challenging.
+After publishing a semi-final draft of `TargetContract`, she involves the community in a collabarative effort to create a `TargetContract`-specific accompanying bounty contract, which we'll name `BountyContract`. The bounty contract describes tests to see if a given `TargetContract` is in any invalid state. It can also generate &amp; deploy a new copy of `TargetContract` for challenging.
 
 
-She then registers `TargetContractTest` with the `PutYourMoneyWhereYourContactIs` (`PYMWYCI`) contract, along with a deposit, for a specified period. Any challenger can try and break `TargetContractTest` and win that deposit during that period.
+She then registers `BountyContract` with the `BountyManager` contract, along with a deposit, for a specified period. Any challenger can try and break `BountyContract` and win that deposit during that period.
 
 ### Detailed Description
 #### Contracts Involved
-* `TargetContract` is the high stake contract, the Author challenges other to find vulnerabilities in. Written Author, it has to adhere to some guidelines (see <a href='#constraints-for-targetcontract'>Constraints</a>).
-* `PYMWYCI` (Put Your Money Where Your Contract Is, pronounced "*pi-mu-kee*")  is the contract registry for bounties, presented in this essay. It registers and manages bounties.
-* `ContractEnvironmentInterface` is an abstract contract providing access to environment variables (e.g. `block.number`) for `TargetContract` to help the challenger set up a scenario where the contract fais. `ContractTestEnvironment` is a concrete descendant that allows a challenger to play with the environment with some restrictions. While a `ContractTestEnvironment` is presented in this work, the Author can choose to modify it in a way she sees as reasonable for her contract.
-* `TargetContractTest` is written by Alice in a collobarative manner with the community to try and identify any potential invalid states of the contract. Examples might include the contract not having the amount of money it "thinks" it has, or a changing number of total tokens in case of a token contract. `TargetContractTest` also has a method for generating &amp; deploying a brand new `TargetContract` for challenging.
-* Any number of so-called "attack contracts" by Charlie that help him expose the vulnerability in `TargetContract`.
+* `BountyManager`  is the contract registry for bounties, presented in this essay. It registers and manages bounties. It is presented in this work.
+* `TargetContract` is the high stake contract that the Author challenges other to find vulnerabilities in. It has to adhere to some guidelines (see <a href='#constraints-for-targetcontract'>Constraints</a>).
+* `BountyContract` is written by the Author in a collobarative manner with the community to try and identify any potential invalid states of the contract. Examples might include the contract not having the amount of money it "thinks" it has, or a changing number of total tokens in case of a token contract. `BountyContract` also has a method for generating &amp; deploying a brand new `TargetContract` for challenging.
+* `ContractEnvironmentInterface` is an abstract contract providing access to environment variables (e.g. `block.number`) for `TargetContract` to help the challenger set up a scenario where the contract fails. `ContractTestEnvironment` is a concrete descendant that allows a challenger to play with the environment under some reasonable restrictions. While a `ContractTestEnvironment` is presented in this work, the Author may choose to copy and modify it in a way she sees as reasonable for her contract.
+* Any number of so-called "attack contracts" by the Bounty Challenger that help him expose the vulnerability in `TargetContract`.
 
 
 #### Order of interactions
-1. Alice publishes `TargetContract` and a draft of `TargetContractTest`. Both, and especially the latter, are up for community inspection for some period of time. Potential challengers, as well as security experts, may suggest additional tests to add to `TargetContractTest`, either formally (see <a href="#future-directions">Future Directions</a>) or informally (through forums etc.).
-2. Once that period is over, Alice deploys the final version of `TargetContractTest` and registers it with the `PYMWYCI` contract, along with the bounty deposit. She also defines a period *p* during which the bounty is open for grabs for anyone who manages to coerce the contract into an invalid state.
-3. Charlie the Challenger believes he can break `TargetContract` in a way that `TargetContractTest.assertInvalidState()` will return true. He quietly builds up and verifies his strategy offline. When he's ready, he creates in advance the transactions needed to prove `TargetContract`'s vulnerability. He pre-deploys any required attack contracts discretely on the Ethereum production blockchain. He may also play (in any legitimate way) with `TargetContract`'s environment by pre-creating his own instance of `EnvironmentContractInterface`.
-4.  Charlie calls `PYMWYCI.initiateChallenge()` with a deposit of 5% of the bounty sum. This makes sure `PYMWYCI` locks the `TargetContractTest` bounty solely for Charlie for the next 40 blocks (~10 minutes). 
+1. Alice publishes `TargetContract` and a draft of `BountyContract`. Both, and especially the latter, are up for community inspection for some period of time. Potential challengers, as well as security experts, may suggest additional tests to add to `BountyContract`, either formally (see <a href="#future-directions">Future Directions</a>) or informally (through forums etc.).
+2. Once that period is over, Alice deploys the final version of `BountyContract` and registers it with the `BountyManager` contract, along with the bounty deposit. She also defines a period *p* during which the bounty is open for grabs for anyone who manages to coerce the contract into an invalid state.
+3. Charlie the Challenger believes he can break `TargetContract` in a way that `BountyContract.assertInvalidState()` will return true. He quietly builds up and verifies his strategy offline. When he's ready, he creates in advance the transactions needed to prove `TargetContract`'s vulnerability. He pre-deploys any required attack contracts discretely on the Ethereum production blockchain. He may also play (in any legitimate way) with `TargetContract`'s environment by pre-creating his own instance of `EnvironmentContractInterface`.
+4.  Charlie calls `PYMWYCI.initiateChallenge()` with a deposit of 5% of the bounty sum. This makes sure `BountyManager` locks the `BountyContract` bounty solely for Charlie for the next 40 blocks (~10 minutes). 
 5.  Charlie calls `PYMWCI.challengeContract()` with the address of his attack contract (and probably with a lot of gas).
 5. Charlie may fire any additional transactions he prepared in advance to get `TargetContract` into an invalid state, then calls `PYMWYCI.assertState()`.
-6. If successful, the bounty fund in `PYMWYCI` becomes withdrawable by Charlie. Otherwise, [TBD what happens with Charlie's deposit. Should not be given to Alice to prevent her from DoSing the bounty].
+6. If successful, the bounty fund in `BountyManager` becomes withdrawable by Charlie. Otherwise, [TBD what happens with Charlie's deposit. Should not be given to Alice to prevent her from DoSing the bounty].
 
 ### Constraints for `TargetContract`
 * Its contrsuctor should not use `msg.sender`, it should instead be dependency-injected as a parameter (it will be populated with the challenger's address upon creation of a challenge).
