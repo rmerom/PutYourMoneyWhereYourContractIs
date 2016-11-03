@@ -100,7 +100,7 @@ contract BountyManager {
         if (msg.value * 100 < bountyInfo.bountySum * DEPOSIT_PERCENTAGE) throw;
         
         // State changes
-        releasePreviousLockIfNeeded(bountyInfo);
+        releasePreviousLockIfNeeded(bountyInfo.lockedUntilBlock, bountyInfo.currentDeposit);
         bountyInfo.lockedUntilBlock = block.number + NUM_BLOCKS_LOCKED;
         bountyInfo.currentChallenger = msg.sender;
         bountyInfo.currentDeposit = msg.value;
@@ -183,10 +183,10 @@ contract BountyManager {
     }
     
 
-    function releasePreviousLockIfNeeded(BountyInfo bountyInfo) internal {
-         if (bountyInfo.lockedUntilBlock > 0) {
+    function releasePreviousLockIfNeeded(uint lockedUntilBlock, uint currentDeposit) internal {
+         if (lockedUntilBlock > 0) {
              // Last challenge failed, move funds to lostDepositsAddress;
-             pendingWithdrawls[lostDepositsAddress] += bountyInfo.currentDeposit;
+             pendingWithdrawls[lostDepositsAddress] += currentDeposit;
          }
     }
     
