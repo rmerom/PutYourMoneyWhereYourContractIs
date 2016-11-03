@@ -43,6 +43,7 @@ contract BountyManager {
         // Challenge info
         uint lockedUntilBlock;
         address currentChallenger;
+        address challengerContract;
         uint currentDeposit;
     }
     
@@ -71,6 +72,7 @@ contract BountyManager {
                 
                 lockedUntilBlock: 0,
                 currentChallenger: 0,
+                challengerContract: 0,
                 currentDeposit: 0
             });
         LogBountySubmitted(bountyContractAddress, msg.value, deadlineBlockNumber);
@@ -103,6 +105,7 @@ contract BountyManager {
         releasePreviousLockIfNeeded(bountyInfo.lockedUntilBlock, bountyInfo.currentDeposit);
         bountyInfo.lockedUntilBlock = block.number + NUM_BLOCKS_LOCKED;
         bountyInfo.currentChallenger = msg.sender;
+        bountyInfo.challengerContract = 0;
         bountyInfo.currentDeposit = msg.value;
         
         LogChallengeInitiated(bountyContract);
@@ -118,18 +121,19 @@ contract BountyManager {
      */
     function challengeContract(
         address bountyContract, 
-        address challengerContract,
+        address _challengerContract,
         address ownerToSet) {
 
         // Conditions
         assertValidChallenger(bountyContract);
 
         BountyInfo bountyInfo = bounties[bountyContract];
+        bountyInfo.challengerContract = _challengerContract;
 
         EnvironmentContractInterface env;
         address targetContract;
         (targetContract, env) = BaseBountyContract(bountyInfo.bountyContract).challengeContract(ownerToSet);
-        BaseChallengerContract(challengerContract).execute(targetContract, env);
+        BaseChallengerContract(_challengerContract).execute(targetContract, env);
     }
     
     /** 
@@ -199,7 +203,8 @@ contract BountyManager {
         // Conditions
         if (!bountyInfo.exists) throw;
         if (block.number > bountyInfo.runsUntilBlock) throw;
-        if (bountyInfo.currentChallenger != msg.sender) throw;
+        if (bountyInfo.currentChallenger != msg.sender && 
+            bountyInfo.challengerContract != msg.sender) throw;
         if (block.number > bountyInfo.lockedUntilBlock) throw;
     }
 
