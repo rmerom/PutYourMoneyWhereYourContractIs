@@ -4,7 +4,7 @@ pragma solidity ^0.4.4;
 //
 //
 /**
- * @title Base contract for TargetContracts' interface with the environment (blockchain).
+ * @title Base contract for TargetContracts' interaction with the environment (blockchain).
  * During automated bounties, use either EnvironmentTestContract
  * or create one of your own with more, or less, constraints.
  * 
@@ -14,7 +14,7 @@ pragma solidity ^0.4.4;
  * * In future, an automatic tool will do that.
  */
 contract EnvironmentContractInterface {
-  function blockDotBlockHash(uint blockNumber) returns (bytes32);
+  function blockDotBlockHash(uint forBlockNumber) returns (bytes32);
   function blockDotCoinbase() returns (address);
   function blockDotDifficulty() returns (uint);
   function blockDotGasLimit() returns (uint);
@@ -31,11 +31,10 @@ contract EnvironmentContractInterface {
 contract EnvironmentTestContract is EnvironmentContractInterface {
   mapping(uint =>bytes32) blockHash;
   address coinbase;
+  uint currentBlockNumber;
   uint difficulty;
   uint gasLimit;
-  uint currentBlockNumber;
   uint timestamp;
-  bool blockGasLimitChanged;
   
   /**
    * Returns the block hash set for this block by setBlockDotBlockHash(),
@@ -44,16 +43,16 @@ contract EnvironmentTestContract is EnvironmentContractInterface {
   function blockDotBlockHash(uint forBlockNumber) returns (bytes32) {
       if (int(forBlockNumber) < (int(currentBlockNumber - 256)) 
           || (forBlockNumber >= currentBlockNumber)) {
-          // Spec allows acceessing [currentblock-256, currentblock) only. 
+          // Spec allows acceessing [currentblock-256, currentblock) only,
+          // otherwise returns 0.
           return 0;
       }
       bytes32 hash = blockHash[forBlockNumber];
-      if (uint(hash) == 0) {
-          // Not explicitly set, return prod version.
+      if (hash == 0) {
+          // Not explicitly set, return prod value.
           return block.blockhash(forBlockNumber);
       }
       return hash;
-      
   }
   
   function blockDotCoinbase() returns (address) {
@@ -97,16 +96,17 @@ contract EnvironmentTestContract is EnvironmentContractInterface {
   }
   
   function setBlockDotGasLimit(uint _gasLimit) {
-    if (blockGasLimitChanged) throw;
+    // Gas can only set once per block.
+    if (gasLimit > 0) throw;
     gasLimit = _gasLimit;
-    blockGasLimitChanged = true;
   }
   
   function setBlockDotNumber(uint blockNumber) {
       // Time can only move forward.
       if (blockNumber <= currentBlockNumber) throw;
       currentBlockNumber = blockNumber;
-      blockGasLimitChanged = false;
+      // Let user re-set gas limit.
+      gasLimit = 0;
   }
   function setBlockDotTimestamp(uint _timestamp) {
       // Time can only move forward.
@@ -115,19 +115,15 @@ contract EnvironmentTestContract is EnvironmentContractInterface {
   }
 }
 
-// This is the environment that is to be run in production.
-// In order to save gas, one may carefully get rid of the EnvironmentInterface 
-// before deploying contract to production, and replace calls with references
-// to the actual variables.
 /**
- * Environment that is to be used in production.
+ * Environment contract to be used in production.
  * Alternatively, in order to save gas, you may carefully replace calls
  * to the EnvironmentInterface with the actual variable names (e.g. block.number
- * instead of _env.blockDotNumber() ).
+ * instead of env.blockDotNumber() ).
  */
-contract ProdEnvironment {
-  function blockDotBlockHash(uint blockNumber) returns (bytes32) {
-      return block.blockhash(blockNumber);
+contract ProdEnvironment is EnvironmentContractInterface {
+  function blockDotBlockHash(uint forBlockNumber) returns (bytes32) {
+      return block.blockhash(forBlockNumber);
   }
   function blockDotCoinbase() returns (address) {
       return block.coinbase;

@@ -3,22 +3,24 @@ pragma solidity ^0.4.4;
 import "./bounty_contract.sol";
 import "./challenger_contract.sol";
 
+// Part of the PutYourMoneyWhereYourContractIs (bit.do/pymwyci) project.
+
 /**
- * @title creates and manages bounties
+ * @title creates and manages bounties.
  * 
  * Responsible for running bounties. Authors of contracts can register their 
- * BountyContract and challengers can use it to officially start a bounty challenge.
+ * BountyContract and challengers can use it to start a bounty challenge.
  */
 contract BountyManager {
     event LogBountySubmitted(address bountyContract, uint bountySum, uint untilBlock);
-    event LogChallengeInitiated(address contractTest, address caller);
+    event LogChallengeInitiated(address bountyContract);
     event LogBountySuccess(address bountyContract, address challenger);
     
-    uint8 constant DEPOSIT_PERCENTAGE = 5;
+    // Percentage of bounty sum required as a deposit to challenge the bounty.
+    uint8 constant DEPOSIT_PERCENTAGE = 5;  
     uint constant MIN_BOUNTY_DEADLINE_IN_BLOCKS = 5083; // ~1 day @ 17s/block
     uint16 constant NUM_BLOCKS_LOCKED = 36;  // ~10 minutes @ 17s/block
-    uint MIN_BOUNTY_WEI = 1000000000000 wei;  // 1e12 wei == 1e-6 ether
-    
+    uint constant MIN_BOUNTY_WEI = 1000000000000 wei;  // 1e12 wei == 1e-6 ether
     
     address owner = msg.sender;
     
@@ -26,6 +28,7 @@ contract BountyManager {
     // challengers who did not succeed in getting the bounty.
     address lostDepositsAddress;
 
+    // Map from bountyContract.
     mapping(address => BountyInfo) bounties;
     mapping(address => uint) pendingWithdrawls;
     
@@ -35,10 +38,9 @@ contract BountyManager {
         uint bountySum;
         uint runsUntilBlock;
         address bountyContract;
-        address bountyOwner;
-        bool successful;
+        address bountyOwner;  // account to return the bounty to.
         
-        // Lock info
+        // Challenge info
         uint lockedUntilBlock;
         address currentChallenger;
         uint currentDeposit;
@@ -50,12 +52,12 @@ contract BountyManager {
 
     /**
      * Call this method to register your own bounty.
-     * The value with the call will constitute the bounty.
+     * The value passed with the call will constitute the bounty.
      */
     function registerBounty(
         address bountyContractAddress, 
         uint deadlineBlockNumber) payable {
-        
+
         if (bounties[bountyContractAddress].exists) throw;
         if (msg.value < MIN_BOUNTY_WEI) throw;
         if (deadlineBlockNumber <= block.number) throw;
@@ -66,7 +68,6 @@ contract BountyManager {
                 runsUntilBlock: deadlineBlockNumber,
                 bountyContract: bountyContractAddress,
                 bountyOwner: msg.sender,
-                successful: false,
                 
                 lockedUntilBlock: 0,
                 currentChallenger: 0,
@@ -83,7 +84,7 @@ contract BountyManager {
      * NUM_BLOCKS_LOCKED blocks.
      * NOTE: the deposit is returned only if the challenge succeeds (on top
      * of the bounty sum). This is to prevent DoSing.
-     * If contractTest's challenge is already locked by another challenger, 
+     * If bountyContract's challenge is already locked by another challenger, 
      * this function throws.
      * If successful, this method issues a LogChallengeInitiated event. Once 
      * triggered, the challenger can call challengeContract() to start the
@@ -93,10 +94,10 @@ contract BountyManager {
         BountyInfo bountyInfo = bounties[bountyContract];
         
         // Conditions
-        if (!bountyInfo.exists || bountyInfo.successful) throw;
+        if (!bountyInfo.exists) throw;
         if (block.number > bountyInfo.runsUntilBlock) throw;
         if (block.number <= bountyInfo.lockedUntilBlock) throw;
-        if (msg.value < bountyInfo.bountySum * DEPOSIT_PERCENTAGE / 100) throw;
+        if (msg.value * 100 < bountyInfo.bountySum * DEPOSIT_PERCENTAGE) throw;
         
         // State changes
         releasePreviousLockIfNeeded(bountyInfo);
@@ -104,17 +105,21 @@ contract BountyManager {
         bountyInfo.currentChallenger = msg.sender;
         bountyInfo.currentDeposit = msg.value;
         
-        LogChallengeInitiated(bountyContract, msg.sender);
+        LogChallengeInitiated(bountyContract);
     }
     
     /**
      * Call this function only while holding the lock.
+     * @param bountyContract the bountyContract the user has a lock on.
      * @param challengerContract the contract to run that will challenge the
      *        targetContract.
+     * @param ownerToSet the bountyContract MAY allow setting an owner to the targetContract
+     *        so that any owner-related assertions may be shown not to hold.
      */
     function challengeContract(
         address bountyContract, 
-        address challengerContract) {
+        address challengerContract,
+        address ownerToSet) {
 
         // Conditions
         assertValidChallenger(bountyContract);
@@ -123,7 +128,7 @@ contract BountyManager {
 
         EnvironmentContractInterface env;
         address targetContract;
-        (targetContract, env) = BaseBountyContract(bountyInfo.bountyContract).challengeContract();
+        (targetContract, env) = BaseBountyContract(bountyInfo.bountyContract).challengeContract(ownerToSet);
         BaseChallengerContract(challengerContract).execute(targetContract, env);
     }
     
@@ -140,7 +145,6 @@ contract BountyManager {
         
         if (BaseBountyContract(bountyInfo.bountyContract).assertInvalidState()) {
             // Challenger won the bounty!
-            bountyInfo.successful = true;
             pendingWithdrawls[msg.sender] += bountyInfo.bountySum;
             pendingWithdrawls[msg.sender] += bountyInfo.currentDeposit;
             
@@ -163,8 +167,8 @@ contract BountyManager {
         BountyInfo bountyInfo = bounties[bountyContract];
         
         if (!bountyInfo.exists) throw;
-        if (block.number < bountyInfo.runsUntilBlock) throw;
-        if (bountyInfo.successful) throw;  // Sorry, you lost.
+        if (block.number <= bountyInfo.lockedUntilBlock) throw;
+        if (block.number <= bountyInfo.runsUntilBlock) throw;
         pendingWithdrawls[bountyInfo.bountyOwner] += bountyInfo.bountySum;
         
         delete bounties[bountyContract];
@@ -172,7 +176,6 @@ contract BountyManager {
     
     // Withdraws money from a successful bounty hunt.
     function getPendingWithdrawl() {
-        if (pendingWithdrawls[msg.sender] == 0) throw;
         uint amount = pendingWithdrawls[msg.sender];
         
         pendingWithdrawls[msg.sender] = 0;
@@ -190,15 +193,14 @@ contract BountyManager {
     /**
      * Checks conditions for the msg.sender to work on a given bounty.
      */
-    function assertValidChallenger(address contractTest) {
-        BountyInfo bountyInfo = bounties[contractTest];
+    function assertValidChallenger(address bountyContract) {
+        BountyInfo bountyInfo = bounties[bountyContract];
         
         // Conditions
         if (!bountyInfo.exists) throw;
         if (block.number > bountyInfo.runsUntilBlock) throw;
         if (bountyInfo.currentChallenger != msg.sender) throw;
         if (block.number > bountyInfo.lockedUntilBlock) throw;
-        if (msg.value < bountyInfo.bountySum * DEPOSIT_PERCENTAGE / 100) throw;
     }
 
     
