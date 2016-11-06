@@ -13,6 +13,7 @@ import "./challenger_contract.sol";
  */
 contract BountyManager {
     event LogBountySubmitted(address bountyContract, uint bountySum, uint untilBlock);
+    event LogBountyCanceled(address bountyContract);
     event LogChallengeInitiated(address bountyContract);
     event LogBountySuccess(address bountyContract, address challenger);
     
@@ -39,6 +40,7 @@ contract BountyManager {
         uint runsUntilBlock;
         address bountyContract;
         address bountyOwner;  // account to return the bounty to.
+        bool cancelationRequested;
         
         // Challenge info
         uint lockedUntilBlock;
@@ -54,6 +56,9 @@ contract BountyManager {
     /**
      * Call this method to register your own bounty.
      * The value passed with the call will constitute the bounty.
+     * deadlineBlockNumber constitutes the approximate end time of the bounty
+     * (if a lock is initiated before then, BountyManager will let the challenger
+     * try until the the lock end time).
      */
     function registerBounty(
         address bountyContractAddress, 
@@ -69,6 +74,7 @@ contract BountyManager {
                 runsUntilBlock: deadlineBlockNumber,
                 bountyContract: bountyContractAddress,
                 bountyOwner: msg.sender,
+                cancelationRequested: false,
                 
                 lockedUntilBlock: 0,
                 currentChallenger: 0,
@@ -102,7 +108,7 @@ contract BountyManager {
         if (msg.value * 100 < bountyInfo.bountySum * DEPOSIT_PERCENTAGE) throw;
         
         // State changes
-        releasePreviousLockIfNeeded(bountyInfo.lockedUntilBlock, bountyInfo.currentDeposit);
+        clearUnusedDeposit(bountyInfo.lockedUntilBlock, bountyInfo.currentDeposit);
         bountyInfo.lockedUntilBlock = block.number + NUM_BLOCKS_LOCKED;
         bountyInfo.currentChallenger = msg.sender;
         bountyInfo.challengerContract = 0;
@@ -114,7 +120,7 @@ contract BountyManager {
     /**
      * Call this function only while holding the lock.
      * @param bountyContract the bountyContract the user has a lock on.
-     * @param challengerContract the contract to run that will challenge the
+     * @param _challengerContract the contract to run that will challenge the
      *        targetContract.
      * @param ownerToSet the bountyContract MAY allow setting an owner to the targetContract
      *        so that any owner-related assertions may be shown not to hold.
@@ -166,6 +172,7 @@ contract BountyManager {
     /**
      * Withdraws bounty funds for a bounty creator in case nobody claimed the
      * bounty. Can only be called after the deadline has passed.
+     * After a successful call, invoke getPendingWithdrawl().
      */
     function releaseUnclaimedBounty(address bountyContract) {
         BountyInfo bountyInfo = bounties[bountyContract];
@@ -174,7 +181,6 @@ contract BountyManager {
         if (block.number <= bountyInfo.lockedUntilBlock) throw;
         if (block.number <= bountyInfo.runsUntilBlock) throw;
         pendingWithdrawls[bountyInfo.bountyOwner] += bountyInfo.bountySum;
-        
         delete bounties[bountyContract];
     }
     
@@ -186,14 +192,6 @@ contract BountyManager {
         if (!msg.sender.send(amount)) throw;
     }
     
-
-    function releasePreviousLockIfNeeded(uint lockedUntilBlock, uint currentDeposit) internal {
-         if (lockedUntilBlock > 0) {
-             // Last challenge failed, move funds to lostDepositsAddress;
-             pendingWithdrawls[lostDepositsAddress] += currentDeposit;
-         }
-    }
-    
     /**
      * Checks conditions for the msg.sender to work on a given bounty.
      */
@@ -202,12 +200,35 @@ contract BountyManager {
         
         // Conditions
         if (!bountyInfo.exists) throw;
-        if (block.number > bountyInfo.runsUntilBlock) throw;
         if (bountyInfo.currentChallenger != msg.sender && 
             bountyInfo.challengerContract != msg.sender) throw;
         if (block.number > bountyInfo.lockedUntilBlock) throw;
     }
+    
+    /**
+     * Called by the contract author to prematurely end a bounty. Notice that
+     * if a challenger's lock is in effect, the bounty will only end after 
+     * that lock expires.
+     * Once cancelation is in effect, call releaseUnclaimedBounty().
+     * 
+     */
+    function endBounty(address bountyContract) {
+        BountyInfo bountyInfo = bounties[bountyContract];
+        if (!bountyInfo.exists) throw;
+        if (bountyInfo.bountyOwner != msg.sender) throw;
+        
+        if (bountyInfo.runsUntilBlock > block.number) {
+            bountyInfo.runsUntilBlock = block.number;
+        }
+        LogBountyCanceled(bountyContract);
+    }
 
+    function clearUnusedDeposit(uint lockedUntilBlock, uint currentDeposit) internal {
+         if (lockedUntilBlock > 0) {
+             // Last challenge failed, move funds to lostDepositsAddress;
+             pendingWithdrawls[lostDepositsAddress] += currentDeposit;
+         }
+    }
     
     // v2
     // Lets outsiders suggest alternative ContractTest for testing a contract.
