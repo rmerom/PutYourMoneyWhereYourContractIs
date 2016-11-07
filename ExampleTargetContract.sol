@@ -1,6 +1,6 @@
 pragma solidity ^0.4.0;
 
-import "./environemnt.sol";
+import "./environment.sol";
 
 /**
  * An example base class for contract that is going to be bug-bountied.
@@ -16,7 +16,7 @@ import "./environemnt.sol";
  * state variables as is feasible, because that will let its respective ContractTest 
  * verify its validity.
  */
-contract BountableContract {
+contract ExampleTargetContract {
     EnvironmentContractInterface public env;
     address public owner;
     

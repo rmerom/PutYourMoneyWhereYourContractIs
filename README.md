@@ -12,7 +12,7 @@ Different tools have been proposed to increase users' confidence in the security
 
 We present a mechanism that allows high-stake contract authors to create a trustless, ethereum-based Bug Bounty to be used in the period after the high-stake contract is published and **before** it is put in production.
 
-Such a mechanism is expected to draw attention from challengers with the necessary technical skills to find vulnerabilities, as they can deterministically predict the reward. So-called black hat hackers may also be drawn, in order to receive a bounty prize before someone else detects a vulnerability.
+Such a mechanism is expected to draw attention from challengers with the necessary technical skills to find vulnerabilities, as they can ascertain with high confidence how and what kind of reward they might get. This will also help instill confidence in potential investors, knowing that the contract author has staked their own funds to vouch for the correctness of the contract.
 
 ### Related work
 
@@ -27,7 +27,7 @@ Our contribution is to propose a general-purpose, reusable "Put Your Money Where
 
 
 ### Protocol Summary
-![figure 1](http://www.pixhoster.info/f/2016-11/27333f074fd472da2c0a52ff61fe4a84.png)
+![figure 1](http://www.pixhoster.info/f/2016-11/8ec82d5715361e10daf541c579a16f96.png)
 Alice the Author wants to write a contract for general use by Ethereum users, which we'll name `TargetContract`. She is willing to put her money behind its security, and give out some amount of Ether as bounty for anyone who finds a fault in the contract.
 
 After publishing a semi-final draft of `TargetContract`, she involves the community in a collabarative effort to create a `TargetContract`-specific accompanying bounty contract, which we'll name `BountyContract`. The bounty contract describes tests to see if a given `TargetContract` is in any invalid state. It can also generate &amp; deploy a new copy of `TargetContract` for challenging.

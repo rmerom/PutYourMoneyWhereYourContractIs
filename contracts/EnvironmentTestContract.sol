@@ -1,40 +1,40 @@
 pragma solidity ^0.4.4;
 
-// Part of the PutYourMoneyWhereYourContractIs (bit.do/pymwyci) project.
-//
-//
-/**
- * @title Base contract for TargetContracts' interaction with the environment (blockchain).
- * During automated bounties, use either EnvironmentTestContract
- * or create one of your own with more, or less, constraints.
- * 
- * For production, use ProdEnvironment below, or replace references to this 
- * interface in the original TargetContract with their direct global vars*.
- * 
- * * In future, an automatic tool will do that.
- */
-contract EnvironmentContractInterface {
-  function blockDotBlockHash(uint forBlockNumber) returns (bytes32);
-  function blockDotCoinbase() returns (address);
-  function blockDotDifficulty() returns (uint);
-  function blockDotGasLimit() returns (uint);
-  function blockDotNumber() returns (uint);
-  function blockDotTimestamp() returns (uint);
-  function now() returns (uint);
-}
-
+import "./EnvironmentContractInterface.sol";
 
 /**
  * Can be used as the Environment during testing and bounty challenges.
  * Of course, you do not have to use this contract, you can create a similar one.
  */
 contract EnvironmentTestContract is EnvironmentContractInterface {
+  address owner;
+  
   mapping(uint =>bytes32) blockHash;
   address coinbase;
   uint currentBlockNumber;
   uint difficulty;
   uint gasLimit;
   uint timestamp;
+  
+  modifier lockedToOwner {
+    if (owner != 0 && msg.sender != owner) throw;
+    _;
+  }
+  
+  function getOwner() returns (address) {
+    return owner;
+  }
+  
+  /**
+    Alows setting and locking the owner of this environment contract, to
+    disable malicious actors from calling its setXXX functions.
+    Note we set the owner manually, as the creator of this contract is the
+    BountyContract, not the challenger.
+  */ 
+  function lockOwner(address _owner) {
+      //if (owner != 0) throw;
+      owner = _owner; 
+  }
   
   /**
    * Returns the block hash set for this block by setBlockDotBlockHash(),
@@ -79,68 +79,38 @@ contract EnvironmentTestContract is EnvironmentContractInterface {
       return (timestamp != 0) ? timestamp : block.timestamp;
   }
 
-  function setBlockDotBlockHash(uint forBlockNumber, bytes32 _blockHash) {
+  function setBlockDotBlockHash(uint forBlockNumber, bytes32 _blockHash) lockedToOwner {
       // May never change once set.
       if (blockHash[forBlockNumber] != 0) throw;
       blockHash[forBlockNumber] = _blockHash;
   }
   
-  function setBlockDotCoinbase(address addr) {
+  function setBlockDotCoinbase(address addr) lockedToOwner {
       if (addr == 0) throw;
       coinbase = addr;
   }
   
-  function setBlockDotDifficulty(uint _difficulty) {
+  function setBlockDotDifficulty(uint _difficulty) lockedToOwner {
       if (_difficulty == 0) throw;
       difficulty = _difficulty;
   }
   
-  function setBlockDotGasLimit(uint _gasLimit) {
+  function setBlockDotGasLimit(uint _gasLimit) lockedToOwner {
     // Gas can only set once per block.
     if (gasLimit > 0) throw;
     gasLimit = _gasLimit;
   }
   
-  function setBlockDotNumber(uint blockNumber) {
+  function setBlockDotNumber(uint blockNumber) lockedToOwner {
       // Time can only move forward.
       if (blockNumber <= currentBlockNumber) throw;
       currentBlockNumber = blockNumber;
       // Let user re-set gas limit.
       gasLimit = 0;
   }
-  function setBlockDotTimestamp(uint _timestamp) {
+  function setBlockDotTimestamp(uint _timestamp) lockedToOwner {
       // Time can only move forward.
       if (_timestamp < timestamp) throw;
       timestamp = _timestamp;
-  }
-}
-
-/**
- * Environment contract to be used in production.
- * Alternatively, in order to save gas, you may carefully replace calls
- * to the EnvironmentInterface with the actual variable names (e.g. block.number
- * instead of env.blockDotNumber() ).
- */
-contract ProdEnvironment is EnvironmentContractInterface {
-  function blockDotBlockHash(uint forBlockNumber) returns (bytes32) {
-      return block.blockhash(forBlockNumber);
-  }
-  function blockDotCoinbase() returns (address) {
-      return block.coinbase;
-  }
-  function blockDotDifficulty() returns (uint) {
-      return block.difficulty;
-  }
-  function blockDotGasLimit() returns (uint) {
-      return block.gaslimit;
-  }
-  function blockDotNumber() returns (uint) {
-      return block.number;
-  }
-  function blockDotTimestamp() returns (uint) {
-      return block.timestamp;
-  }
-  function now() returns (uint) {
-      return block.timestamp;
   }
 }

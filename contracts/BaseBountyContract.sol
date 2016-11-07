@@ -1,6 +1,6 @@
 pragma solidity ^0.4.4;
 
-import "./environment.sol";
+import "./EnvironmentContractInterface.sol";
 
 /**
  * Base contract for managing a specific bounty. Inherit from this contract

@@ -1,7 +1,7 @@
 pragma solidity ^0.4.4;
 
-import "./bounty_contract.sol";
-import "./challenger_contract.sol";
+import "./BaseBountyContract.sol";
+import "./BaseChallengerContract.sol";
 
 // Part of the PutYourMoneyWhereYourContractIs (bit.do/pymwyci) project.
 
