@@ -34,22 +34,7 @@ Our contribution is to propose a general-purpose, reusable "Put Your Money Where
 ![figure 1](http://www.pixhoster.info/f/2016-11/3a0ca7f211d85fb2a4f1e5b70d294b04.png)
 
 
-### Detailed Description (why it works this way)
-An automated bug bounty, just like any decentralized app, should create economic incentive for all sides to play fairly. We examine what might go wrong for each participant.
-
-#### What Alice (the Author) has to be concerned about
- 1. She finds a bug in the code before someone else notices.
-2. Challenger retrieves bounty sum without finding a fault with the contract.
-3. Challenger finds a vulnerability in the code but decides not to tell anyone about it and exploit it later on.
-
-#### What Charlie (the Bounty Challenger) has to be concerned about
-3. He finds a vulnerability in the code 
-4. Someone finds his attack plan and gets the bounty.
-2. Alice 
-
-
-First iteration - let Alice 
-
+### Detailed Description 
 
 #### Contracts Involved
 * `BountyManager`  is the contract registry for bounties. It registers and manages bounties. Its code is presened [here](https://github.com/rmerom/PutYourMoneyWhereYourContractIs/blob/master/contracts/BountyManager.sol).
