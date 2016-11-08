@@ -59,9 +59,6 @@ Constraints below apply both to `TargetContract` and to any external methods it 
 * It should not use any of the environment variables, but instead use the `EnvironmentContractInterface` passed in its constructor to retrieve those. In production, it would use [EnvironmentProd](https://github.com/rmerom/PutYourMoneyWhereYourContractIs/blob/master/contracts/EnvironmentProd.sol) which simply returns the actual variable values. To enhance performance, in future an open source tool would be able to replace any such calls with the direct environment variables to reduce gas costs.
 
 
-### Security Aspects
-
-TODO(rmerom): complete this section.
 
 ### Future Directions
 1. Devlelop methodologies for testing a system composed of multiple contracts.
@@ -70,5 +67,13 @@ TODO(rmerom): complete this section.
 4. Allow a temporal increase of bounty prize (for example, bounty starts at `b/10` and climbs up to `b` Ether). This will allow obvious bugs that were overlooked to be fixed without Alice having to pay the entire bounty amount.
 
 [See contracts code](https://github.com/rmerom/PutYourMoneyWhereYourContractIs/blob/master/contracts)
+
+### FAQ
+
+#### Why is a lock needed to challenge a bounty?
+Suppose there is a very high-value bounty, and Charlie the Challenger tries to "attack" it. Any malicious adversary, including but not limited to miners, could detect the attack, duplicate it, and try to insert its own duplicated transactions before those of Charlie's. The lock's duration is not very long because we expect Charlie to create his attack transactions and contracts in advance.
+
+#### Why does one need to put down a deposit to challenge a bounty?
+To prevent DoS attacks on the bounty lock.
 
 
