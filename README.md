@@ -31,7 +31,7 @@ Our contribution is to propose a general-purpose, reusable "Put Your Money Where
 
 ![figure 1](http://www.pixhoster.info/f/2016-11/305bae6134a69b3eccd3996faa65239c.png)
 
-![figure 1](http://www.pixhoster.info/f/2016-11/3a0ca7f211d85fb2a4f1e5b70d294b04.png)
+![figure 1](http://www.pixhoster.info/f/2016-11/3f208d4287aa75c8988e564dfdb9289d.png)
 
 
 ### Detailed Description 
